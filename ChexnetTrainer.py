@@ -20,6 +20,7 @@ from DensenetModels import DenseNet121
 from DensenetModels import DenseNet169
 from DensenetModels import DenseNet201
 from DatasetGenerator import DatasetGenerator
+from DatasetGenerator_Imbalance import DatasetGeneratorforTraining
 
 import matplotlib.pyplot as plt
 
@@ -58,7 +59,7 @@ class ChexnetTrainer ():
             
         model.densenet121.classifier = nn.Sequential(nn.Linear(1024, 1), nn.Sigmoid())
         #print(model)
-        model = torch.nn.DataParallel(model).cuda()
+        model = torch.nn.DataParallel(model).to('cuda' if torch.cuda.is_available() else 'cpu')
                 
         #-------------------- SETTINGS: DATA TRANSFORMS
         normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -71,13 +72,19 @@ class ChexnetTrainer ():
         transformSequence=transforms.Compose(transformList)
 
         #-------------------- SETTINGS: DATASET BUILDERS
-        datasetTrain = DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTrain, transform=transformSequence)
+        datasetTrain = DatasetGeneratorforTraining(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTrain, transform=transformSequence)
+        datasetTrainAcc = DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTrain, transform=transformSequence)
         datasetVal =   DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileVal, transform=transformSequence)
-        print('datasetTrain:',len(datasetTrain))
-        print('datasetVal:',len(datasetVal))
+        print('Train:',len(datasetTrain))
+        print('TrainAcc:',len(datasetTrainAcc))
+        print('Val:',len(datasetVal))
         
         dataLoaderTrain = DataLoader(dataset=datasetTrain, batch_size=trBatchSize, shuffle=True,  num_workers=24, pin_memory=True)
+        dataLoaderTrainAcc = DataLoader(dataset=datasetTrainAcc, batch_size=trBatchSize, shuffle=True,  num_workers=24, pin_memory=True)
         dataLoaderVal = DataLoader(dataset=datasetVal, batch_size=trBatchSize, shuffle=False, num_workers=24, pin_memory=True)
+        
+        
+
         
         #-------------------- SETTINGS: OPTIMIZER & SCHEDULER
         optimizer = optim.Adam (model.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-5)
@@ -108,11 +115,11 @@ class ChexnetTrainer ():
             timestampDate = time.strftime("%Y_%m_%d")
             timestampSTART = timestampDate + '-' + timestampTime
                          
-            lossTrain, accTrain = ChexnetTrainer.epochTrain(model, dataLoaderTrain, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
+            lossTrain, accTrain = ChexnetTrainer.epochTrain(model, dataLoaderTrain, dataLoaderTrainAcc, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
             trainlosslist.append(lossTrain)
             trainacclist.append(accTrain)
             
-            lossVal, losstensor, accVal = ChexnetTrainer.epochVal(model, dataLoaderVal, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
+            lossVal, accVal = ChexnetTrainer.epochVal(model, dataLoaderVal, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
             vallosslist.append(lossVal)
             valacclist.append(accVal)
             
@@ -120,7 +127,7 @@ class ChexnetTrainer ():
             timestampDate = time.strftime("%Y_%m_%d")
             timestampEND = timestampDate + '-' + timestampTime
             
-            scheduler.step(losstensor.data)
+            scheduler.step(lossVal)
             
             
             if lossVal < lossMIN:
@@ -154,7 +161,7 @@ class ChexnetTrainer ():
         
     #-------------------------------------------------------------------------------- 
        
-    def epochTrain (model, dataLoader, optimizer, scheduler, epochMax, classCount, loss):
+    def epochTrain (model, dataLoader,dataLoaderAcc, optimizer, scheduler, epochMax, classCount, loss):
         
         model.train()
         
@@ -164,12 +171,12 @@ class ChexnetTrainer ():
                         
             target = target.cuda(non_blocking = True)
                  
-            varInput = torch.autograd.Variable(input)
-            varTarget = torch.autograd.Variable(target)         
+            varInput = input.to('cuda' if torch.cuda.is_available() else 'cpu')
+            varTarget = target.to('cuda' if torch.cuda.is_available() else 'cpu')        
             varOutput = model(varInput)
             
             lossvalue = loss(varOutput, varTarget)
-            loss_add += lossvalue           
+            loss_add += lossvalue.item()     
             lossNorm += 1
             optimizer.zero_grad()
             lossvalue.backward()
@@ -179,19 +186,20 @@ class ChexnetTrainer ():
         
         CLASS_NAMES = [ 'Non TB', 'TB']
         cudnn.benchmark = True
-        outGT = torch.FloatTensor().cuda()
-        outPRED = torch.FloatTensor().cuda()
+        outGT = torch.FloatTensor().to('cuda' if torch.cuda.is_available() else 'cpu')
+        #outPRED = torch.FloatTensor().cuda()
+
         correct_count = 0
         total_count = 0
         model.eval()
         
         with torch.no_grad():
-            for batchID, (input, target) in enumerate (dataLoader):
-                target = target.cuda()
+            for batchID, (input, target) in enumerate (dataLoaderAcc):
+                target = target.to('cuda' if torch.cuda.is_available() else 'cpu')
                 outGT = torch.cat((outGT, target), 0)
                 bs, c, h, w = input.size()
 
-                varInput = torch.autograd.Variable(input.view(-1, c, h, w).cuda())
+                varInput = (input.view(-1, c, h, w).cuda()).to('cuda' if torch.cuda.is_available() else 'cpu')
                 out = model(varInput)
                 
                 for k in range(len(out)):
@@ -213,8 +221,8 @@ class ChexnetTrainer ():
         
         CLASS_NAMES = [ 'Normal', 'Abnormal']
         cudnn.benchmark = True
-        outGT = torch.FloatTensor().cuda()
-        outPRED = torch.FloatTensor().cuda()
+        outGT = torch.FloatTensor().to('cuda' if torch.cuda.is_available() else 'cpu')
+        #outPRED = torch.FloatTensor().to('cuda' if torch.cuda.is_available() else 'cpu')
         correct_count = 0
         total_count = 0
         
@@ -223,24 +231,22 @@ class ChexnetTrainer ():
 
             for i, (input, target) in enumerate (dataLoader):
 
-                target = target.cuda(non_blocking=True)
+                target = target.to('cuda' if torch.cuda.is_available() else 'cpu', non_blocking = True)
 
-                varInput = torch.autograd.Variable(input)
-                varTarget = torch.autograd.Variable(target)
+                varInput = input.to('cuda' if torch.cuda.is_available() else 'cpu')
+                varTarget = target.to('cuda' if torch.cuda.is_available() else 'cpu')
                 varOutput = model(varInput)
 
                 losstensor = loss(varOutput, varTarget)
-                losstensorMean += losstensor
 
-                lossVal += losstensor.data
+                lossVal += losstensor.item()
                 lossValNorm += 1
 #-------------------------------------------------------------------------------- 
                 
-                target = target.cuda()
                 outGT = torch.cat((outGT, target), 0)
                 bs, c, h, w = input.size()
 
-                varInput = torch.autograd.Variable(input.view(-1, c, h, w).cuda())
+                varInput = (input.view(-1, c, h, w).cuda()).to('cuda' if torch.cuda.is_available() else 'cpu')
                 out = model(varInput)
                 
                 for k in range(len(out)):
@@ -251,9 +257,8 @@ class ChexnetTrainer ():
                     total_count += 1
                 
         outLoss = lossVal / lossValNorm
-        losstensorMean = losstensorMean / lossValNorm
         acc = correct_count/total_count        
-        return outLoss, losstensorMean, acc
+        return outLoss, acc
                
     #--------------------------------------------------------------------------------     
      
@@ -317,6 +322,7 @@ class ChexnetTrainer ():
         
         modelCheckpoint = torch.load(pathModel)
         model.load_state_dict(modelCheckpoint['state_dict'],False)
+        print('model loaded')
 
         #-------------------- SETTINGS: DATA TRANSFORMS, TEN CROPS
         normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -330,22 +336,24 @@ class ChexnetTrainer ():
         transformSequence=transforms.Compose(transformList)
         
         datasetTest = DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTest, transform=transformSequence)
-        dataLoaderTest = DataLoader(dataset=datasetTest, batch_size=1, num_workers=8, shuffle=False, pin_memory=True)
+        dataLoaderTest = DataLoader(dataset=datasetTest, batch_size=trBatchSize, num_workers=8, shuffle=False, pin_memory=True)
         
         outGT = torch.FloatTensor().cuda()
         outPRED = torch.FloatTensor().cuda()
 
         model.eval()
         a = np.array([[0,0],[0,0]])
+        
+        print('Start Testing...')
         with torch.no_grad():
             for i, (input, target) in enumerate(dataLoaderTest):
-                
+                print('epoch:',i,'out of')
                 # print('input',input.size()) (1,10,3,224,224)
                 # print('target',target.size()) (1,1)
                 target = target.cuda()
                 outGT = torch.cat((outGT, target), 0)
                 bs, n_crops, c, h, w = input.size()
-                varInput = torch.autograd.Variable(input.view(-1, c, h, w).cuda())
+                varInput = (input.view(-1, c, h, w).cuda()).to('cuda')
                 out = model(varInput)
                 # print(out.size()) (10,1)
                 outMean = sum(out)/10
@@ -361,8 +369,12 @@ class ChexnetTrainer ():
                 # Suppose they will be the same type
                 if outMean == 1. and float(target[0][0]) == 1.: a[0][0]+=1
                 if outMean == 1. and float(target[0][0]) == 0.: a[0][1]+=1
-                if outMean == 0. and float(target[0][0]) == 1.: a[1][0]+=1
-                if outMean == 0. and float(target[0][0]) == 0.: a[1][1]+=1
+                if outMean == 0. and float(target[0][0]) == 1.: 
+                    a[1][0]+=1
+                    print('TB mistaken into non TB')
+                if outMean == 0. and float(target[0][0]) == 0.: 
+                    a[1][1]+=1
+                    print('non TB mistaken into TB')
                     
         
         total_correct = a[0][0] + a[1][1]
@@ -373,7 +385,7 @@ class ChexnetTrainer ():
         # Matrix
         fig, ax = plt.subplots(figsize=(5,5))
         a = a.T
-        ax.matshow(a, cmap=plt.cm.Blues, alpha=0.3)
+        ax.matshow(a.T, cmap=plt.cm.Blues, alpha=0.3)
         for i in range(2):
             for j in range(2):
                 ax.text(i, j, s = a[i, j], va='center', ha='center')
@@ -383,8 +395,9 @@ class ChexnetTrainer ():
         labels = ['TB','non-TB']
         ax.set_xticklabels([''] + labels)
         ax.set_yticklabels([''] + labels)
-        plt.savefig('/home/stevenlai/Desktop/chexnet/Full_set/plot/'+launchTimeStamp+'_matrix_fullset.png')
-        plt.show()
+        plt.savefig('/home/stevenlai/Desktop/chexnet/Full_set/plot/matrix_fullset_'+launchTimeStamp+'.png')
+        plt.close()
+        #plt.show()
         
         
         #aurocIndividual = ChexnetTrainer.computeAUROC(outGT, outPRED, nnClassCount)

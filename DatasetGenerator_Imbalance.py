@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 # -------------------------------------------------------------------------------- 
 
-class DatasetGenerator (Dataset):
+class DatasetGeneratorforTraining (Dataset):
     
     #-------------------------------------------------------------------------------- 
     
@@ -33,14 +33,23 @@ class DatasetGenerator (Dataset):
                 imagePath = os.path.join(pathImageDirectory, lineItems[0])
                 imageLabel = lineItems[1:]
                 imageLabel = [int(i) for i in imageLabel]
-                
-                if str(imageLabel) == '[1]':
-                    for i in range(285):
-                        self.listImagePaths.append(imagePath)
-                        self.listImageLabels.append(imageLabel)
-                else:
+                if lineItems[0].split('/')[0] == 'chest14':
                     self.listImagePaths.append(imagePath)
                     self.listImageLabels.append(imageLabel)   
+                elif lineItems[0].split('/')[0] == 'MON' and str(imageLabel) == '[0]':
+                    for i in range(1401):
+                        self.listImagePaths.append(imagePath)
+                        self.listImageLabels.append(imageLabel)   
+                elif lineItems[0].split('/')[0] == 'China' and str(imageLabel) == '[0]':
+                    for i in range(344):
+                        self.listImagePaths.append(imagePath)
+                        self.listImageLabels.append(imageLabel)
+                elif str(imageLabel) == '[1]':
+                    for i in range(853):
+                        self.listImagePaths.append(imagePath)
+                        self.listImageLabels.append(imageLabel)
+                else: pass
+                    
             
         fileDescriptor.close()
     
