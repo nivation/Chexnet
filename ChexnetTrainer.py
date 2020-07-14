@@ -309,7 +309,7 @@ class ChexnetTrainer ():
     def test (pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, transResize, transCrop, launchTimeStamp):   
         
         
-        CLASS_NAMES = [ 'Normal', 'Abnormal']
+        CLASS_NAMES = [ 'non-TB', 'TB']
 
         cudnn.benchmark = True
         
@@ -372,7 +372,7 @@ class ChexnetTrainer ():
                 if outMean == 0. and float(target[0][0]) == 1.: 
                     a[1][0]+=1
                     print('TB mistaken into non TB')
-                if outMean == 0. and float(target[0][0]) == 0.: 
+                if outMean == 1. and float(target[0][0]) == 0.: 
                     a[1][1]+=1
                     print('non TB mistaken into TB')
                     
@@ -395,7 +395,8 @@ class ChexnetTrainer ():
         labels = ['TB','non-TB']
         ax.set_xticklabels([''] + labels)
         ax.set_yticklabels([''] + labels)
-        plt.savefig('/home/stevenlai/Desktop/chexnet/Full_set/plot/matrix_fullset_'+launchTimeStamp+'.png')
+        savename = (pathFileTest.split('/')[-1]).split('.')[0]
+        plt.savefig('/home/stevenlai/Desktop/chexnet/Full_set/plot/matrix_fullset_'+savename+'_'+launchTimeStamp+'.png')
         plt.close()
         #plt.show()
         

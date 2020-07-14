@@ -10,8 +10,8 @@ from Cross_Validation import CrossValidation
 
 def main ():
     
-    #runTest()
-    runTrain()
+    runTest()
+    #runTrain()
 
 # --------------------------------------------------------------------------------   
 
@@ -71,7 +71,7 @@ def runTrain():
 def runTest():
     
     pathDirData = '/home/stevenlai/Desktop/chexnet/database'
-    pathFileTest = '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt'
+    #pathFileTest = '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt'
     nnArchitecture = 'DENSE-NET-121'
     nnIsTrained = True
     nnClassCount = 1
@@ -79,10 +79,17 @@ def runTest():
     imgtransResize = 256
     imgtransCrop = 224
     
-    pathModel = '/home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_03-15:55:13_fullset.pth.tar'
+    pathModel = '/home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_10-16:43:10_fullset.pth (copy 1).tar'
     
     timestampLaunch = ''
-    ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, imgtransResize, imgtransCrop, timestampLaunch)
+    pathFileTestlist = ['/home/stevenlai/Desktop/chexnet/Full_set/dataset/MON_TB.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/MON_non.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_non.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/Chest_non.txt']
+    
+    for pathFileTest in pathFileTestlist:
+        ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, imgtransResize, imgtransCrop, timestampLaunch)
 
 # -------------------------------------------------------------------------------- 
 
