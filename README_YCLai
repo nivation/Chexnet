@@ -24,26 +24,29 @@ Change class according to your own class. In our case, it's only a binary task, 
 >>> nnClassCount = 1
 
 You can choose whether or not change the training parameter. The default is listed:
->>> trBatchSize = 32
->>> trMaxEpoch = 100
+>>> trBatchSize = 640
+>>> trMaxEpoch = 30
 
 Run terminal in /home/stevenlai/Desktop/chexnet/Full_set/Main.py:
 >>> python3 Main.py
 It should start woring like:
 
 preparing txtfile for cross validation...
-fold: 1
-train_count: 75280
-val_count: 18818
-test_count: 18822 (fixed) ...
-
+fold: 1 complete
+fold: 2 complete
+fold: 3 complete
+fold: 4 complete
+fold: 5 complete
 
 training for fold 1
 
-Train: 447987
-TrainAcc: 75280
+Batch size: 640
+Total epoch: 30
+
+Train: 443730
+Train Acc: 75280
 Val: 18818
-epoch: 1
+------- epoch: 1 ------------------------------------------------
 [save] [2020_07_10-18:53:13]
 train acc = 0.932  train loss = 0.454
 val acc = 0.929  val loss = 0.214
@@ -71,15 +74,13 @@ Run terminal in /home/stevenlai/Desktop/chexnet/Full_set/:
 >>> python3 Main_testwhentraining.py
 It should start woring like:
 
-epoch: 1 out of
-non TB mistaken into TB
-epoch: 2 out of
-non TB mistaken into TB
-epoch: 3 out of
-non TB mistaken into TB
-epoch: 4 out of...
+Testing default
+Batch size: 1
+model loaded: /home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_20-14:52:07_fullset.pth.tar
+Test: 18822
+Start Testing...
 
-and you may find confusion matrix output at /home/stevenlai/Desktop/chexnet/Full_set/plot/
+and you may find confusion matrix and result csvfile output at /home/stevenlai/Desktop/chexnet/Full_set/plot/
 remember to sort it in folders or it might be covered 
 
 
