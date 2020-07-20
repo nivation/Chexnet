@@ -7,9 +7,11 @@ folder 'database' sort the whole data w.r.t its source, and is use for our train
 
 
 ---Full_set:------------------------------------------------------------------------------
+
 the main training file
 
 ---Full_set/dataset:---------------------------------------------------------------------------
+
 Training:Val:Test = 4:1:1
 where cv = 5 within training and val data
 You can set your own cv in Main.py, and found the result of txt in folder 'cv'
@@ -17,6 +19,7 @@ You can set your own cv in Main.py, and found the result of txt in folder 'cv'
 the rest of the txt file is use for confusion matrix w.r.t source
 
 ---train---------------------------------------------------------------------
+
 To Train your model, remember to switch mode in Main.py
 >>>  runTest()    >>>  #runTest() 
      #runTrain()       runTrain() 
@@ -48,6 +51,7 @@ Train: 443730
 Train Acc: 75280
 Val: 18818
 ------- epoch: 1 ------------------------------------------------
+
 [save] [2020_07_10-18:53:13]
 train acc = 0.932  train loss = 0.454
 val acc = 0.929  val loss = 0.214
@@ -58,9 +62,10 @@ train acc = 0.927  train loss = 0.411
 val acc = 0.925  val loss = 0.211 ...
 
 ---test---------------------------------------------------------------------
+
 To test your model, remember to switch mode in Main_testwhentraining.py
 >>>  #runTest()    >>>  runTest() 
-     runTrain()         #runTrain() 
+>>>  runTrain()    >>>  #runTrain() 
      
 Change class according to your own class. In our case, it's only a binary task, so 1 class
 >>> nnClassCount = 1
@@ -86,6 +91,7 @@ remember to sort it in folders or it might be covered
 
 
 ---heatmap--------------------------------------------------------------------
+
 open jupyter notebook in /home/stevenlai/Desktop/chexnet/Full_set/plot:
 >>> jupyter notebook
 
