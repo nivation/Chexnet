@@ -2,6 +2,7 @@ import os
 import numpy as np
 import time
 import sys
+import csv
 
 import torch
 import torch.nn as nn
@@ -76,7 +77,7 @@ class ChexnetTrainer ():
         datasetTrainAcc = DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTrain, transform=transformSequence)
         datasetVal =   DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileVal, transform=transformSequence)
         print('Train:',len(datasetTrain))
-        print('TrainAcc:',len(datasetTrainAcc))
+        print('Train Acc:',len(datasetTrainAcc))
         print('Val:',len(datasetVal))
         
         dataLoaderTrain = DataLoader(dataset=datasetTrain, batch_size=trBatchSize, shuffle=True,  num_workers=24, pin_memory=True)
@@ -110,11 +111,11 @@ class ChexnetTrainer ():
         valacclist = []
         
         for epochID in range (0, trMaxEpoch):
-            print('epoch:', epochID+1)
+            print('------- epoch:', epochID+1,'------------------------------------------------')
             timestampTime = time.strftime("%H:%M:%S")
             timestampDate = time.strftime("%Y_%m_%d")
             timestampSTART = timestampDate + '-' + timestampTime
-                         
+              
             lossTrain, accTrain = ChexnetTrainer.epochTrain(model, dataLoaderTrain, dataLoaderTrainAcc, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
             trainlosslist.append(lossTrain)
             trainacclist.append(accTrain)
@@ -164,13 +165,13 @@ class ChexnetTrainer ():
     def epochTrain (model, dataLoader,dataLoaderAcc, optimizer, scheduler, epochMax, classCount, loss):
         
         model.train()
-        
         loss_add = 0
         lossNorm = 0
+        
+        # enumerate spend most time
         for batchID, (input, target) in enumerate (dataLoader):
                         
             target = target.cuda(non_blocking = True)
-                 
             varInput = input.to('cuda' if torch.cuda.is_available() else 'cpu')
             varTarget = target.to('cuda' if torch.cuda.is_available() else 'cpu')        
             varOutput = model(varInput)
@@ -199,7 +200,7 @@ class ChexnetTrainer ():
                 outGT = torch.cat((outGT, target), 0)
                 bs, c, h, w = input.size()
 
-                varInput = (input.view(-1, c, h, w).cuda()).to('cuda' if torch.cuda.is_available() else 'cpu')
+                varInput = input.view(-1, c, h, w).to('cuda' if torch.cuda.is_available() else 'cpu')
                 out = model(varInput)
                 
                 for k in range(len(out)):
@@ -231,8 +232,7 @@ class ChexnetTrainer ():
 
             for i, (input, target) in enumerate (dataLoader):
 
-                target = target.to('cuda' if torch.cuda.is_available() else 'cpu', non_blocking = True)
-
+                target = target.to('cuda' if torch.cuda.is_available() else 'cpu')
                 varInput = input.to('cuda' if torch.cuda.is_available() else 'cpu')
                 varTarget = target.to('cuda' if torch.cuda.is_available() else 'cpu')
                 varOutput = model(varInput)
@@ -241,12 +241,9 @@ class ChexnetTrainer ():
 
                 lossVal += losstensor.item()
                 lossValNorm += 1
-#-------------------------------------------------------------------------------- 
-                
                 outGT = torch.cat((outGT, target), 0)
                 bs, c, h, w = input.size()
-
-                varInput = (input.view(-1, c, h, w).cuda()).to('cuda' if torch.cuda.is_available() else 'cpu')
+                varInput = input.view(-1, c, h, w).to('cuda' if torch.cuda.is_available() else 'cpu')
                 out = model(varInput)
                 
                 for k in range(len(out)):
@@ -308,8 +305,11 @@ class ChexnetTrainer ():
     
     def test (pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, transResize, transCrop, launchTimeStamp):   
         
-        
+        print('Testing default')
+        print('Batch size:',trBatchSize)
         CLASS_NAMES = [ 'non-TB', 'TB']
+        gt = []
+        pred = []
 
         cudnn.benchmark = True
         
@@ -322,7 +322,7 @@ class ChexnetTrainer ():
         
         modelCheckpoint = torch.load(pathModel)
         model.load_state_dict(modelCheckpoint['state_dict'],False)
-        print('model loaded')
+        print('model loaded:',pathModel)
 
         #-------------------- SETTINGS: DATA TRANSFORMS, TEN CROPS
         normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -338,6 +338,8 @@ class ChexnetTrainer ():
         datasetTest = DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTest, transform=transformSequence)
         dataLoaderTest = DataLoader(dataset=datasetTest, batch_size=trBatchSize, num_workers=8, shuffle=False, pin_memory=True)
         
+        print('Test:',len(datasetTest))
+        
         outGT = torch.FloatTensor().cuda()
         outPRED = torch.FloatTensor().cuda()
 
@@ -347,7 +349,6 @@ class ChexnetTrainer ():
         print('Start Testing...')
         with torch.no_grad():
             for i, (input, target) in enumerate(dataLoaderTest):
-                print('epoch:',i,'out of')
                 # print('input',input.size()) (1,10,3,224,224)
                 # print('target',target.size()) (1,1)
                 target = target.cuda()
@@ -364,17 +365,22 @@ class ChexnetTrainer ():
                 
                 if outMean < 0.5: outMean = 0.
                 else: outMean = 1.
+                
                 # print('outMean',outMean)    
                 # print('target', float(target[0][0]))
                 # Suppose they will be the same type
+                
                 if outMean == 1. and float(target[0][0]) == 1.: a[0][0]+=1
-                if outMean == 1. and float(target[0][0]) == 0.: a[0][1]+=1
+                if outMean == 0. and float(target[0][0]) == 0.: a[1][1]+=1
                 if outMean == 0. and float(target[0][0]) == 1.: 
                     a[1][0]+=1
-                    print('TB mistaken into non TB')
+                    # print('TB mistaken into non TB')
                 if outMean == 1. and float(target[0][0]) == 0.: 
-                    a[1][1]+=1
-                    print('non TB mistaken into TB')
+                    a[0][1]+=1
+                    # print('non TB mistaken into TB')
+                # print(a)
+                gt.append(float(target[0][0]))
+                pred.append(outMean)
                     
         
         total_correct = a[0][0] + a[1][1]
@@ -389,16 +395,33 @@ class ChexnetTrainer ():
         for i in range(2):
             for j in range(2):
                 ax.text(i, j, s = a[i, j], va='center', ha='center')
-        plt.title('TB-nonTB matrix')
+        savename = (pathFileTest.split('/')[-1]).split('.')[0]
+        plt.title(savename + ' TB-nonTB matrix')
         plt.xlabel('ground truth')        
         plt.ylabel('predict')
         labels = ['TB','non-TB']
         ax.set_xticklabels([''] + labels)
         ax.set_yticklabels([''] + labels)
-        savename = (pathFileTest.split('/')[-1]).split('.')[0]
         plt.savefig('/home/stevenlai/Desktop/chexnet/Full_set/plot/matrix_fullset_'+savename+'_'+launchTimeStamp+'.png')
         plt.close()
         #plt.show()
+        
+        # csv
+        
+        # save filename
+        name = []
+        txt = open(pathFileTest)
+        for filename in txt:
+            name.append(filename.split(' ')[0])
+            
+        # output csv
+        outputdir = open('/home/stevenlai/Desktop/chexnet/Full_set/plot/result_'+savename+'_'+launchTimeStamp+'.csv','w')
+        csvwriter = csv.writer(outputdir)
+        csvwriter.writerow(['file','ground truth','predict'])
+        for i in range(len(name)):
+            csvwriter.writerow([name[i],gt[i],pred[i]])
+        outputdir.close()
+        
         
         
         #aurocIndividual = ChexnetTrainer.computeAUROC(outGT, outPRED, nnClassCount)

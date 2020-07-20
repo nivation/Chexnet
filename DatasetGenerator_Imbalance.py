@@ -37,15 +37,19 @@ class DatasetGeneratorforTraining (Dataset):
                     self.listImagePaths.append(imagePath)
                     self.listImageLabels.append(imageLabel)   
                 elif lineItems[0].split('/')[0] == 'MON' and str(imageLabel) == '[0]':
-                    for i in range(1401):
+                    for i in range(1384):
                         self.listImagePaths.append(imagePath)
                         self.listImageLabels.append(imageLabel)   
                 elif lineItems[0].split('/')[0] == 'China' and str(imageLabel) == '[0]':
-                    for i in range(344):
+                    for i in range(343):
                         self.listImagePaths.append(imagePath)
                         self.listImageLabels.append(imageLabel)
-                elif str(imageLabel) == '[1]':
-                    for i in range(853):
+                elif lineItems[0].split('/')[0] == 'MON' and str(imageLabel) == '[1]':
+                    for i in range(2800):
+                        self.listImagePaths.append(imagePath)
+                        self.listImageLabels.append(imageLabel)  
+                elif lineItems[0].split('/')[0] == 'China' and str(imageLabel) == '[1]':
+                    for i in range(500):
                         self.listImagePaths.append(imagePath)
                         self.listImageLabels.append(imageLabel)
                 else: pass

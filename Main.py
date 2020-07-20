@@ -45,6 +45,11 @@ def runTrain():
         pathFileTrain = train[i]
         pathFileVal = val[i]
         pathFileTest = test[0]
+        
+        
+        # pathFileTrain = '/home/stevenlai/Desktop/chexnet/Full_set/dataset/check.txt'
+        # pathFileVal = '/home/stevenlai/Desktop/chexnet/Full_set/dataset/check.txt'
+        
     
     #---- Neural network parameters: type of the network, is it pre-trained 
     #---- on imagenet, number of classes
@@ -53,9 +58,13 @@ def runTrain():
         nnClassCount = 1
     
     #---- Training settings: batch size, maximum number of epochs
-        trBatchSize = 32
-        trMaxEpoch = 100
-    
+        trBatchSize = 640
+        trMaxEpoch = 30
+        
+        print('Batch size:',trBatchSize)
+        print('Total epoch:',trMaxEpoch)
+        print()
+        
     #---- Parameters related to image transforms: size of the down-scaled image, cropped image
         imgtransResize = 256
         imgtransCrop = 224
@@ -64,14 +73,17 @@ def runTrain():
     
         ChexnetTrainer.train(pathDirData, pathFileTrain, pathFileVal, nnArchitecture, nnIsTrained, nnClassCount, trBatchSize, trMaxEpoch, imgtransResize, imgtransCrop, timestampLaunch, None)
     
-        ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, imgtransResize, imgtransCrop, timestampLaunch)
+    #---- Testing
+        testBatchSize = 1
+        
+        ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, testBatchSize , imgtransResize, imgtransCrop, timestampLaunch)
 
 # -------------------------------------------------------------------------------- 
 
 def runTest():
     
     pathDirData = '/home/stevenlai/Desktop/chexnet/database'
-    pathFileTest = '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt'
+    #pathFileTest = '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt'
     nnArchitecture = 'DENSE-NET-121'
     nnIsTrained = True
     nnClassCount = 1
@@ -79,10 +91,19 @@ def runTest():
     imgtransResize = 256
     imgtransCrop = 224
     
-    pathModel = '/home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_03-15:55:13_fullset.pth.tar'
+    pathModel = '/home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_20-14:34:35_fullset.pth.tar'
     
     timestampLaunch = ''
-    ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, imgtransResize, imgtransCrop, timestampLaunch)
+    pathFileTestlist = ['/home/stevenlai/Desktop/chexnet/Full_set/dataset/MON_TB.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/MON_non.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_non.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/Chest_non.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/Test.txt']
+    pathFileTestlist = ['/home/stevenlai/Desktop/chexnet/Full_set/dataset/cv/Test_CV_fold_5.txt']
+    
+    for pathFileTest in pathFileTestlist:
+        ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, imgtransResize, imgtransCrop, timestampLaunch)
 
 # -------------------------------------------------------------------------------- 
 

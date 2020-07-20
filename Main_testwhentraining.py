@@ -79,14 +79,16 @@ def runTest():
     imgtransResize = 256
     imgtransCrop = 224
     
-    pathModel = '/home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_10-16:43:10_fullset.pth (copy 1).tar'
+    pathModel = '/home/stevenlai/Desktop/chexnet/Full_set/model/2020_07_10-16:43:10_fullset.pth.tar'
     
     timestampLaunch = ''
     pathFileTestlist = ['/home/stevenlai/Desktop/chexnet/Full_set/dataset/MON_TB.txt',
     '/home/stevenlai/Desktop/chexnet/Full_set/dataset/MON_non.txt',
     '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_TB.txt',
     '/home/stevenlai/Desktop/chexnet/Full_set/dataset/CHN_non.txt',
-    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/Chest_non.txt']
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/Chest_non.txt',
+    '/home/stevenlai/Desktop/chexnet/Full_set/dataset/Test.txt']
+    # pathFileTestlist = ['/home/stevenlai/Desktop/chexnet/Full_set/dataset/check.txt']
     
     for pathFileTest in pathFileTestlist:
         ChexnetTrainer.test(pathDirData, pathFileTest, pathModel, nnArchitecture, nnClassCount, nnIsTrained, trBatchSize, imgtransResize, imgtransCrop, timestampLaunch)

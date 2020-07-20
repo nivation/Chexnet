@@ -90,11 +90,10 @@ class CrossValidation ():
                         else:
                             train.write(cat[i])
                             train_count += 1
-            print('fold:',j+1)
-            print('train_count:',train_count)
-            print('val_count:',val_count)
-            print('test_count:',test_count,'(fixed)')
-            print()
+            print('fold:',j+1,'complete')
+            # print('train_count:',train_count)
+            # print('val_count:',val_count)
+            # print('test_count:',test_count,'(fixed)')
 
             
             
@@ -104,8 +103,8 @@ class CrossValidation ():
         self.testlist.append(test_path)       
         
 if __name__ == '__main__':
-    a = CrossValidation(fold = 2)
-    print(a.testlist)
+    a = CrossValidation(fold = 5)
+    # print(a.testlist)
         
         
         
