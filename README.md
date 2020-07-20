@@ -1,4 +1,5 @@
 ---Files----------------------------------------------------------------------------------------
+
 folder 'original' is the original code download from https://github.com/zoogzog/chexnet
 folder MON(Can_use_for_testing) is a small testing set for the model, which doesnt get debugged for a long time
 folder Full_set is the main training file
