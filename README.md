@@ -1,10 +1,14 @@
----Files----------------------------------------------------------------------------------------
+# Training CheXNet Model for Lung X-ray Grayscale Images  
+Reference code: https://github.com/zoogzog/chexnet  
+Dataset source:
+Performed by: Yu-Cheng Lai
+Last update: 2022/7/19
 
-folder 'original' is the original code download from https://github.com/zoogzog/chexnet
+## About CheXNet  
+Original code can be downloaded from https://github.com/zoogzog/chexnet
 folder MON(Can_use_for_testing) is a small testing set for the model, which doesnt get debugged for a long time
 folder Full_set is the main training file
 folder 'database' sort the whole data w.r.t its source, and is use for our training
-
 
 ---Full_set:------------------------------------------------------------------------------
 
@@ -18,12 +22,15 @@ You can set your own cv in Main.py, and found the result of txt in folder 'cv'
 >>> txtfile = CrossValidation(fold = 5) ==> train:val = 4:1
 the rest of the txt file is use for confusion matrix w.r.t source
 
----train---------------------------------------------------------------------
 
-To Train your model, remember to switch mode in Main.py
->>>  runTest()    >>>  #runTest() 
-     #runTrain()       runTrain() 
-     
+## Usage  
+### train  
+
+To Train your model, remember to switch mode in Main.py  
+'''
+>>>  runTest()    >>>  #runTest()  
+>>> #runTrain()   >>>  runTrain() 
+'''
 Change class according to your own class. In our case, it's only a binary task, so 1 class
 >>> nnClassCount = 1
 
